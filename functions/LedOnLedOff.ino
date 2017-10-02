@@ -4,7 +4,7 @@
 // you need an USB cable to program the arduino
 // the LED is present on the Arduino board
 
-int ledPin = 13; //declare variable ledPin. 13 is the address of the port
+//int ledPin = 13; //declare variable ledPin. 13 is the address of the port
 //to which the LED is connected.
 
 // setup() is only run once

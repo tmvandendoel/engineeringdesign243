@@ -1,11 +1,20 @@
-
+#include <Servo.h>
+#include <ArduinoJson.h>
+//set wheel speeds as globals to ues them in other functions
+int wheelLeft = 0;
+int wheelRight = 0;
+int wheelBack = 0;
+Servo ServoWheelLeft;
+Servo ServoWheelRight;
+Servo ServoWheelBack;
 
 //This file contains the neccesary functions for movement etc...
 //FILE NOT READY TO COMPILE!
 
 
-void move(int direction, int speed)
-{
+void movement(int direction, int speed) {
+  
+  
     /* int direction: integer between -100 and 100 indicating the
      * direction to be taken. 0 means straight forward.
  
@@ -50,3 +59,37 @@ void move(int direction, int speed)
     wheelBack = (int) wheelBack / largest * 100;
     //make the largest power become 100, scale the others appropriately
 }
+
+void setup() {
+  ServoWheelLeft.attach(9);
+  ServoWheelRight.attach(10);
+  ServoWheelBack.attach(11);
+
+  Serial1.begin(115200); //for Ethernet or Wifi -- and clear input buffer
+  // clear the input buffer
+  while (Serial1.available()) {
+     Serial1.read();  
+  }
+}
+
+void loop() {
+  //Use of JSON, because two variables are sent via the Serial. This part reads the JSON data and parses it to two variables.
+  const size_t bufferSize = JSON_OBJECT_SIZE(2) + 20;
+  DynamicJsonBuffer jsonBuffer(bufferSize);
+  const char* json = Serial1.read();
+  JsonObject& root = jsonBuffer.parseObject(json);
+  int direction = root["direction"];
+  int speed = root["speed"];
+  
+  movement(direction, speed); //parsed data is passed to movement calulation function, this function will store data in following globals 
+
+  int ServoWheelLeftSpeed =   90 + 0.9 * wheelLeft; //servo speeds 90 is still, 180 max, 0 max the otherway (maybe a map function is better)
+  int ServoWheelRightSpeed =  90 + 0.9 * wheelRight;
+  int ServoWheelBackSpeed =   90 + 0.9 * wheelBack;
+  
+  ServoWheelLeft.write(ServoWheelLeftSpeed);
+  ServoWheelRight.write(ServoWheelRightSpeed);
+  ServoWheelBack.write(ServoWheelBackSpeed);
+  
+}
+

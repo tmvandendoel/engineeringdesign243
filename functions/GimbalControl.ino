@@ -4,7 +4,7 @@
 // you need an USB cable to program the arduino
 
 // pin number of on-board LED
-int ledPin = 13;
+//int ledPin = 13;
 
 #include <Servo.h>  // standard servo library
 
