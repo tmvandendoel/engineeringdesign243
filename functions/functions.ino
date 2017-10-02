@@ -21,10 +21,30 @@ void move(int direction, int speed)
     int wheelRight = 0;
     int wheelBack = 0;
     // at the end, these vars contain the power sent to each motor
-        
+
+    float cons = pi / 6.0;
     float dir = direction / 100 * pi;
     // convert to radians
         
-        
-        
+    wheelLeft = (int) 100*sin(dir - cons);
+    wheelRight = (int) 100*sin(dir + cons);
+    wheelBack = (int) 100*sin(dir);
+    //calculate relative powers
+    
+
+    int largest = wheelLeft;
+    if(wheelRight > largest)
+    {
+      largest = wheelRight;
+    }
+    if(wheelBack > largest)
+    {
+      largest = wheelBack;
+    }
+    //calculate largest value of the three wheels
+
+    wheelRight = (int) wheelRight / largest * 100;
+    wheelLeft = (int) wheelLeft / largest * 100;
+    wheelBack = (int) wheelBack / largest * 100;
+    //make the largest power become 100, scale the others appropriately
 }
