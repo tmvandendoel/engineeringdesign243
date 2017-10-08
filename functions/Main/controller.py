@@ -1,11 +1,44 @@
+import json
 import pygame
-from math import sin, cos, pi
+import subprocess
 from os import system
 from time import sleep
-import subprocess
+from math import sin, cos, pi
+from string import ascii_lowercase, ascii_uppercase
+
+EXPORT_AS_JSON = False
+COMPUTE_SPEEDS = True
+
+# maps a float in [-1, 1] to a char in [A, Z] or [a,z] or '.'
+def map_to_char(x):
+    i = int(x * 26)
+    if i > 26: i = 26
+    elif i < -26: i = -26
+    if i == 0:
+        return '0'
+    elif i > 0:
+        return ascii_uppercase[i-1]
+    else:
+        return ascii_lowercase[-i-1]
+
+def to_string(data):
+    if COMPUTE_SPEEDS:
+        # Remove the movement and rotation values
+        del data['movement_x']
+        del data['movement_y']
+        del data['rotation']
+    else:
+        # Remove the relative wheel speeds
+        del data['wheel0']
+        del data['wheel1']
+        del data['wheel2']
+    if EXPORT_AS_JSON:
+        return json.dumps(data)
+    else:
+        return ' ' + ''.join(map_to_char(value) for value in data.values())
+
 
 USED_JOYSTICK = 0
-MAXIMUM = 255
 
 browser_location = r'C:\Program Files\Nightly\firefox.exe'
 
@@ -28,9 +61,9 @@ axis_angles = [
 wheel_directions = [(-sin(theta), cos(theta)) for theta in axis_angles]
 
 
-# function to compute dot-product of two 2-dimensional vectors
+# function to compute dot-product of two vectors
 def dot(x, y):
-    return x[0] * y[0] + x[1] * y[1]
+    return sum(a*b for (a, b) in zip(x, y))
 
 
 # some definitions for the axis numbers
@@ -141,26 +174,26 @@ while not done:
     textPrint.print(screen, "Movement: {}".format(movement))
     textPrint.print(screen, "Rotation: {}".format(rotation))
 
-    wheel_velocities = [dot(movement, wheel_direction) + rotation for wheel_direction in wheel_directions]
+    wheel_velocities = [dot(movement, wheel_direction)/2 + rotation for wheel_direction in wheel_directions]
 
     textPrint.print(
         screen,
         "Wheel velocities: " + ', '.join('{:f}'.format(wv) for wv in wheel_velocities)
     )
 
-    old_rate = rate
-    s = ''
-    rate = int(MAXIMUM*abs(rotation) + 0.5)
-    if rate != old_rate:
-        if rate < 0:
-            rate = 0
-        elif rate > MAXIMUM:
-            rate = MAXIMUM
-        s = chr((rate // 16) + ord('a')) + chr((rate % 16) + ord('a'))
-        sp.stdin.write(s.encode('ascii'))
-        sp.stdin.flush()
+    # TODO: complete the dataset with camera and grabbing controls
+    data = {
+        'wheel0': wheel_velocities[0],
+        'wheel1': wheel_velocities[1],
+        'wheel2': wheel_velocities[2],
+        'movement_x': movement[0],
+        'movement_y': movement[1],
+        'rotation': rotation
+    }
+    msg = to_string(data)
+    sp.stdin.write(msg.encode('ascii'))
+    textPrint.print(screen, msg)
 
-    textPrint.print(screen, str(rate) + str(s))
 
     # Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
