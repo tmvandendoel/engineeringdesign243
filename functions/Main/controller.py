@@ -6,7 +6,7 @@ from time import sleep
 from math import sin, cos, pi
 from string import ascii_lowercase, ascii_uppercase
 
-EXPORT_AS_JSON = False
+EXPORT_AS_JSON = True
 COMPUTE_SPEEDS = True
 
 # maps a float in [-1, 1] to a char in [A, Z] or [a,z] or '.'
