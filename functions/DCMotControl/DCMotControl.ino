@@ -1,7 +1,12 @@
+#include <Servo.h>
 // this program demonstrates the communication from the control laptop
 // to the arduino and the commands to steer two DC motors
 // 
 // you need an USB cable to program the arduino
+
+Servo Servo1;
+Servo Servo2;
+Servo Servo3;
 
 // pin number of on-board LED
 int ledPin = 13;
@@ -13,7 +18,12 @@ int PWM3 = 6;
 int PWM4 = 11;
 
 
+
 void setup() {
+  Servo1.attach(9);
+  Servo2.attach(10);
+  Servo3.attach(11);
+  
   // all outputs to zero
   analogWrite(PWM1,0);
   analogWrite(PWM2,0);
@@ -38,39 +48,32 @@ void loop() {
       
       // if 5 kill all outputs
       case '5':
-        analogWrite(PWM1,0);
-        analogWrite(PWM2,0);
-        analogWrite(PWM3,0);
-        analogWrite(PWM4,0);
+        
+
       break;
       // in other cases switch to all combinations of forward and reverse
       // 255 means full speed
       case '8':
-        analogWrite(PWM1,255);
-        analogWrite(PWM2,0);
-        analogWrite(PWM3,255);
-        analogWrite(PWM4,0);
+        Servo1.write(180);
+        Servo2.write(180);
+        Servo3.write(180);
       break;
     
       case '2':
-        analogWrite(PWM1,0);
-        analogWrite(PWM2,255);
-        analogWrite(PWM3,0);
-        analogWrite(PWM4,255);
+        Servo1.write(90);
+        Servo2.write(90);
+        Servo3.write(90);
+      
       break;
       
       case '4':
-        analogWrite(PWM1,255);
-        analogWrite(PWM2,0);
-        analogWrite(PWM3,0);
-        analogWrite(PWM4,255);
+        
+
       break;
       
       case '6':
-        analogWrite(PWM1,0);
-        analogWrite(PWM2,255);
-        analogWrite(PWM3,255);
-        analogWrite(PWM4,0);
+        
+
       break;
       
     

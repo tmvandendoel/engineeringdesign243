@@ -5,8 +5,16 @@ from os import system
 from time import sleep
 from math import sin, cos, pi
 from string import ascii_lowercase, ascii_uppercase
+import serial
 
-EXPORT_AS_JSON = True
+# Initialize the joysticks
+pygame.init()
+pygame.joystick.init()
+USED_JOYSTICK = 1
+
+ser = serial.Serial('COM5', 9600)
+
+EXPORT_AS_JSON = False
 COMPUTE_SPEEDS = True
 
 # maps a float in [-1, 1] to a char in [A, Z] or [a,z] or '.'
@@ -37,8 +45,12 @@ def to_string(data):
     else:
         return ' ' + ''.join(map_to_char(value) for value in data.values())
 
-
-USED_JOYSTICK = 0
+for i in range(pygame.joystick.get_count()):
+    name = pygame.joystick.Joystick(i).get_name()
+    print(name)
+    if name == 'Controller (XBOX 360 For Windows)':
+        USED_JOYSTICK = i
+print('Using joystick {}'.format(i))
 
 browser_location = r'C:\Program Files\Nightly\firefox.exe'
 
@@ -46,8 +58,8 @@ def open_video_feed():
     system('"'+browser_location+'"' + r' 192.168.1.1:8080/?action=stream')
 
 def open_putty_connection():
-    command = 'plink Arduino'
-    sp = subprocess.Popen(command, bufsize=20, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    command = 'plink "Arduino"'
+    sp = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     return sp
 
 # the angles at which the wheels' axes are pointing
@@ -102,11 +114,10 @@ class TextPrint:
     def unindent(self):
         self.x -= 10
 
-pygame.init()
-
 # open the putty connection, write the maximum
-sp = open_putty_connection()
+# sp = open_putty_connection()
 # sleep(1)
+# sp.stdin.write(b' ZZZ\n')
 # sp.stdin.write((str(MAXIMUM)+' ').encode('ascii'))
 # sp.stdin.flush()
 rate = 0
@@ -122,9 +133,6 @@ done = False
 
 # Used to manage how fast the screen updates
 clock = pygame.time.Clock()
-
-# Initialize the joysticks
-pygame.joystick.init()
 
 # Get ready to print
 textPrint = TextPrint()
@@ -191,15 +199,15 @@ while not done:
         'rotation': rotation
     }
     msg = to_string(data)
-    sp.stdin.write(msg.encode('ascii'))
+    # sp.stdin.write(msg.encode('ascii'))
+    ser.write(msg.encode())
     textPrint.print(screen, msg)
 
 
     # Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
 
-    # Limit to 20 frames per second
-    clock.tick(60)
+    clock.tick(20)
 
 # Close the window and quit.
 # If you forget this line, the program will 'hang'
