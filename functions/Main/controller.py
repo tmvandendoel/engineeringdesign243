@@ -1,6 +1,5 @@
 import json
 import pygame
-import subprocess
 from os import system
 from time import sleep
 from math import sin, cos, pi
@@ -12,8 +11,15 @@ pygame.init()
 pygame.joystick.init()
 USED_JOYSTICK = 1
 
-ser = serial.Serial('COM5', 9600)
+ser = serial.Serial('COM7', 9600)
+msg = ' 000000'
+ser.write(msg.encode())
+camera_dir = [0.0, 0.0]
+camera_speed = 1
 
+pickup = 0
+
+FPS = 20
 EXPORT_AS_JSON = False
 COMPUTE_SPEEDS = True
 
@@ -57,10 +63,11 @@ browser_location = r'C:\Program Files\Nightly\firefox.exe'
 def open_video_feed():
     system('"'+browser_location+'"' + r' 192.168.1.1:8080/?action=stream')
 
-def open_putty_connection():
-    command = 'plink "Arduino"'
-    sp = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    return sp
+# no longer used method to connect using putty
+# def open_putty_connection():
+#     command = 'plink "Arduino"'
+#     sp = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+#     return sp
 
 # the angles at which the wheels' axes are pointing
 axis_angles = [
@@ -71,6 +78,13 @@ axis_angles = [
 
 # using the angles, we determine the direction in which wheels will move when powered
 wheel_directions = [(-sin(theta), cos(theta)) for theta in axis_angles]
+
+def clamp(x, bounds):
+    if x < bounds[0]:
+        return bounds[0]
+    elif x > bounds[1]:
+        return bounds[1]
+    return x
 
 
 # function to compute dot-product of two vectors
@@ -84,11 +98,13 @@ leftY = 1
 triggers = 2
 rightX = 3
 rightY = 4
+CAMERA_RESET = 9
 
 # Define some colors for printing
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+SPARSE = True
 
 # This is a simple class that is used to print to the screen
 # It has nothing to do with the joysticks, just outputting the
@@ -114,13 +130,6 @@ class TextPrint:
     def unindent(self):
         self.x -= 10
 
-# open the putty connection, write the maximum
-# sp = open_putty_connection()
-# sleep(1)
-# sp.stdin.write(b' ZZZ\n')
-# sp.stdin.write((str(MAXIMUM)+' ').encode('ascii'))
-# sp.stdin.flush()
-rate = 0
 
 # Set the width and height of the screen [width,height]
 size = [500, 400]
@@ -165,6 +174,14 @@ while not done:
         done = True
     textPrint.print(screen, "Buttons pressed: " + ", ".join(str(k) for k in buttons))
 
+    up = 4 in buttons
+    down = 5 in buttons
+
+    if up and not down:
+        pickup = 135
+    elif down and not up:
+        pickup = 0
+
     # read the hat-switch (or d-pad) inputs
     # currently unused, but may be necessary later
     hats = joystick.get_numhats()
@@ -177,12 +194,27 @@ while not done:
     textPrint.unindent()
 
     # give the analog sticks and triggers, and calculate the wheel velocities
-    movement = (axes[leftX], -axes[leftY])
+    movement = list(map(
+        lambda x: round(10*x)/10,
+        [axes[leftX], -axes[leftY]]
+    ))
+    # movement = (axes[leftX], -axes[leftY])
     rotation = axes[triggers]
+    camera_axes = list(map(
+        lambda x: round(10*x)/10,
+        [axes[rightX], -axes[rightY]]
+    ))
+
+
     textPrint.print(screen, "Movement: {}".format(movement))
     textPrint.print(screen, "Rotation: {}".format(rotation))
+    textPrint.print(screen, "Camera  : {}".format(camera_axes))
+
 
     wheel_velocities = [dot(movement, wheel_direction)/2 + rotation for wheel_direction in wheel_directions]
+    camera_dir = [clamp(a + b * camera_speed / FPS, (-1, 1)) for a, b in zip(camera_dir, camera_axes)]
+    if CAMERA_RESET in buttons:
+        camera_dir = [0, 0]
 
     textPrint.print(
         screen,
@@ -196,18 +228,22 @@ while not done:
         'wheel2': wheel_velocities[2],
         'movement_x': movement[0],
         'movement_y': movement[1],
-        'rotation': rotation
+        'rotation': rotation,
+        'camera0': camera_dir[0],
+        'camera1': camera_dir[1],
+        'pickup0': pickup
     }
+    prevmsg = msg
     msg = to_string(data)
-    # sp.stdin.write(msg.encode('ascii'))
-    ser.write(msg.encode())
     textPrint.print(screen, msg)
+    if msg != prevmsg or not SPARSE:
+        ser.write(msg.encode())
 
 
     # Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
 
-    clock.tick(20)
+    clock.tick(FPS)
 
 # Close the window and quit.
 # If you forget this line, the program will 'hang'
