@@ -6,28 +6,41 @@ from math import sin, cos, pi
 from string import ascii_lowercase, ascii_uppercase
 import serial
 
-# Initialize the joysticks
+# initialise the joysticks
 pygame.init()
 pygame.joystick.init()
 USED_JOYSTICK = 1
 
+# initialise the serial connection and reset all servos
 ser = serial.Serial('COM7', 9600)
 msg = ' 000000'
 ser.write(msg.encode())
 camera_dir = [0.0, 0.0]
 camera_speed = 1
-
 pickup = 0
+
+# the angles at which the wheels' axes are pointing
+axis_angles = [
+    pi / 2,
+    7 / 6 * pi,
+    11 / 6 * pi
+]
 
 FPS = 20
 EXPORT_AS_JSON = False
 COMPUTE_SPEEDS = True
 
+# method to keep a value in a certain interval. Used for message sending
+def clamp(x, bounds):
+    if x < bounds[0]:
+        return bounds[0]
+    elif x > bounds[1]:
+        return bounds[1]
+    return x
+
 # maps a float in [-1, 1] to a char in [A, Z] or [a,z] or '.'
 def map_to_char(x):
-    i = int(x * 26)
-    if i > 26: i = 26
-    elif i < -26: i = -26
+    i = clamp(int(x * 26), (-26, 26))
     if i == 0:
         return '0'
     elif i > 0:
@@ -35,6 +48,8 @@ def map_to_char(x):
     else:
         return ascii_lowercase[-i-1]
 
+
+# turns the data dictionary into a message for the Arduino
 def to_string(data):
     if COMPUTE_SPEEDS:
         # Remove the movement and rotation values
@@ -51,6 +66,8 @@ def to_string(data):
     else:
         return ' ' + ''.join(map_to_char(value) for value in data.values())
 
+# make sure we pick the right controller
+# (used as a safeguard, since InputMapper's exclusive mode doesn't always work)
 for i in range(pygame.joystick.get_count()):
     name = pygame.joystick.Joystick(i).get_name()
     print(name)
@@ -63,34 +80,13 @@ browser_location = r'C:\Program Files\Nightly\firefox.exe'
 def open_video_feed():
     system('"'+browser_location+'"' + r' 192.168.1.1:8080/?action=stream')
 
-# no longer used method to connect using putty
-# def open_putty_connection():
-#     command = 'plink "Arduino"'
-#     sp = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-#     return sp
-
-# the angles at which the wheels' axes are pointing
-axis_angles = [
-    pi / 2,
-    7 / 6 * pi,
-    11 / 6 * pi
-]
 
 # using the angles, we determine the direction in which wheels will move when powered
 wheel_directions = [(-sin(theta), cos(theta)) for theta in axis_angles]
 
-def clamp(x, bounds):
-    if x < bounds[0]:
-        return bounds[0]
-    elif x > bounds[1]:
-        return bounds[1]
-    return x
-
-
-# function to compute dot-product of two vectors
+# function to compute dot-product of two vectors, used for wheel speed calculations
 def dot(x, y):
     return sum(a*b for (a, b) in zip(x, y))
-
 
 # some definitions for the axis numbers
 leftX = 0
@@ -104,11 +100,13 @@ CAMERA_RESET = 9
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+# with this flag enabled, we only send a new message when the inputs have changed
+# this saves power on the Arduino
 SPARSE = True
 
-# This is a simple class that is used to print to the screen
-# It has nothing to do with the joysticks, just outputting the
-# information.
+# this is a simple class that is used to print to the screen
+# it has nothing to do with the joysticks, just outputting the
+# information
 class TextPrint:
     def __init__(self):
         self.reset()
@@ -131,27 +129,26 @@ class TextPrint:
         self.x -= 10
 
 
-# Set the width and height of the screen [width,height]
+# set the width and height of the screen [width,height]
 size = [500, 400]
 screen = pygame.display.set_mode(size)
-
 pygame.display.set_caption("Controller Input")
 
-# Loop until the user clicks the close button.
+# loop until the user clicks the close button or presses [options] on the controller
 done = False
 
-# Used to manage how fast the screen updates
+# used to manage the screen updating
 clock = pygame.time.Clock()
 
-# Get ready to print
+# get ready to print
 textPrint = TextPrint()
 
 # -------- Main Program Loop -----------
 while not done:
     # clear all the events, also check if the close button was clicked
-    for event in pygame.event.get():  # User did something
-        if event.type == pygame.QUIT:  # If user clicked close
-            done = True  # Flag that we are done so we exit this loop
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            done = True
         # most events are ignored
 
     # drawing step (clear the screen first)
@@ -161,10 +158,6 @@ while not done:
     # take the first joystick
     joystick = pygame.joystick.Joystick(USED_JOYSTICK)
     joystick.init()
-
-    # Get the name from the OS for the controller/joystick
-    name = joystick.get_name()
-    textPrint.print(screen, "Joystick name: {}".format(name))
 
     axes = [round(joystick.get_axis(i), 2) for i in range(joystick.get_numaxes())]
 
@@ -178,7 +171,7 @@ while not done:
     down = 5 in buttons
 
     if up and not down:
-        pickup = 135
+        pickup = 1
     elif down and not up:
         pickup = 0
 
@@ -221,7 +214,6 @@ while not done:
         "Wheel velocities: " + ', '.join('{:f}'.format(wv) for wv in wheel_velocities)
     )
 
-    # TODO: complete the dataset with camera and grabbing controls
     data = {
         'wheel0': wheel_velocities[0],
         'wheel1': wheel_velocities[1],
@@ -245,7 +237,5 @@ while not done:
 
     clock.tick(FPS)
 
-# Close the window and quit.
-# If you forget this line, the program will 'hang'
-# on exit if running from IDLE.
+# close the window and quit.
 pygame.quit()

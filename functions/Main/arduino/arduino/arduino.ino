@@ -5,13 +5,13 @@
  *  5, 6      -> camera X and Y
  *  7, 8      -> picking up
  */
-Servo ServoWheel0;
-Servo ServoWheel1;
-Servo ServoWheel2;
-Servo Camera0;
-Servo Camera1;
-Servo Pickup0;
-Servo Pickup1;
+Servo wheel0;
+Servo wheel1;
+Servo wheel2;
+Servo cameraX;
+Servo cameraY;
+Servo pickup0;
+Servo pickup1;
 
 // Values at which the continuous servos are (almost) stationary
 float deadPoint0 = 88.0; // Heel
@@ -26,13 +26,13 @@ float pickup1down = 135;
 
 void setup() {
   // Attach the servo objects to their respective ports
-  ServoWheel0.attach(9);
-  ServoWheel1.attach(10);
-  ServoWheel2.attach(11);
-  Camera0.attach(5);
-  Camera1.attach(6);
-  Pickup0.attach(7);
-  Pickup1.attach(8);
+  wheel0.attach(9);
+  wheel1.attach(10);
+  wheel2.attach(11);
+  cameraX.attach(5);
+  cameraY.attach(6);
+  pickup0.attach(7);
+  pickup1.attach(8);
 
   Serial.begin(9600); //for Ethernet or Wifi -- and clear input buffer
   // clear the input buffer
@@ -62,40 +62,43 @@ void loop() {
   while (Serial.available() < 6) delay(10);
   // Read wheel data
   c = Serial.read();
-  float wheel0 = char_to_float(c);
+  float wheelSpeed0 = char_to_float(c);
   c = Serial.read();
-  float wheel1 = char_to_float(c);
+  float wheelSpeed1 = char_to_float(c);
   c = Serial.read();
-  float wheel2 = char_to_float(c);
+  float wheelSpeed2 = char_to_float(c);
 
   // Read camera angles
   c = Serial.read();
-  float cam0 = char_to_float(c);
+  float camX = char_to_float(c);
   c = Serial.read();
-  float cam1 = char_to_float(c);
+  float camY = char_to_float(c);
 
   // Read pickup mechanism state
   c = Serial.read();
-  float pu = char_to_float(c);
+  // float pu = char_to_float(c);
+  bool pu_up = (c == 'Z');
   
   
   //The Python program will return a value between -1 and 1, the arduino needs values between 0 and 180 and converts it here
-  float wheelSpeed0  = wheel0 * 90 + deadPoint0;
-  float wheelSpeed1  = wheel1 * 90 + deadPoint1;
-  float wheelSpeed2  = wheel2 * 90 + deadPoint2;
-  float camAngle0    = cam0 * 90 + 90;
-  float camAngle1    = cam1 * 90 + 90;
-  float pickupAngle0 = pickup0down + pu * (pickup0up - pickup0down);
-  float pickupAngle1 = pickup1down + pu * (pickup1up - pickup1down);
+  wheelSpeed0  = wheelSpeed0 * 90 + deadPoint0;
+  wheelSpeed1  = wheelSpeed1 * 90 + deadPoint1;
+  wheelSpeed2  = wheelSpeed2 * 90 + deadPoint2;
+  camX         = camX * 90 + 90;
+  camY         = camY * 90 + 90;
+  // float pickupAngle0 = pickup0down + pu * (pickup0up - pickup0down);
+  // float pickupAngle1 = pickup1down + pu * (pickup1up - pickup1down);
+  float pickupAngle0 = pu_up ? pickup0up : pickup0down;
+  float pickupAngle1 = pu_up ? pickup1up : pickup1down;
   
 
-  ServoWheel0.write(wheelSpeed0);
-  ServoWheel1.write(wheelSpeed1);
-  ServoWheel2.write(wheelSpeed2);
-  Camera0.write(camAngle0);
-  Camera1.write(camAngle1);
-  Pickup0.write(pickupAngle0);
-  Pickup1.write(pickupAngle1);
+  wheel0.write(wheelSpeed0);
+  wheel1.write(wheelSpeed1);
+  wheel2.write(wheelSpeed2);
+  cameraX.write(camX);
+  cameraY.write(camY);
+  pickup0.write(pickupAngle0);
+  pickup1.write(pickupAngle1);
 }
 
 
