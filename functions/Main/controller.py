@@ -12,7 +12,14 @@ pygame.joystick.init()
 USED_JOYSTICK = 1
 
 # initialise the serial connection and reset all servos
-ser = serial.Serial('COM7', 9600)
+ser = None
+for i in range(16):
+    try:
+        ser = serial.Serial('COM{}'.format(i), 9600)
+        print('Found a device on serial port {}'.format(i))
+    except Exception:
+        print('No device on port {}'.format(i))
+        continue
 msg = ' 000000'
 ser.write(msg.encode())
 camera_dir = [0.0, 0.0]
@@ -167,31 +174,19 @@ while not done:
         done = True
     textPrint.print(screen, "Buttons pressed: " + ", ".join(str(k) for k in buttons))
 
-    up = 4 in buttons
-    down = 5 in buttons
+    up = 5 in buttons
+    down = 4 in buttons
 
     if up and not down:
         pickup = 1
     elif down and not up:
         pickup = 0
 
-    # read the hat-switch (or d-pad) inputs
-    # currently unused, but may be necessary later
-    hats = joystick.get_numhats()
-    textPrint.print(screen, "Number of hats: {}".format(hats))
-    textPrint.indent()
-
-    for i in range(hats):
-        hat = joystick.get_hat(i)
-        textPrint.print(screen, "Hat {} value: {}".format(i, str(hat)))
-    textPrint.unindent()
-
     # give the analog sticks and triggers, and calculate the wheel velocities
     movement = list(map(
         lambda x: round(10*x)/10,
         [axes[leftX], -axes[leftY]]
     ))
-    # movement = (axes[leftX], -axes[leftY])
     rotation = axes[triggers]
     camera_axes = list(map(
         lambda x: round(10*x)/10,
