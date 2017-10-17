@@ -4,6 +4,7 @@
  *  9, 10, 11 -> front, left, and right wheels
  *  5, 6      -> camera X and Y
  *  7, 8      -> picking up
+ *  12        -> lights
  */
 Servo wheel0;
 Servo wheel1;
@@ -12,6 +13,7 @@ Servo cameraX;
 Servo cameraY;
 Servo pickup0;
 Servo pickup1;
+int lightsPin = 12;
 
 // Values at which the continuous servos are (almost) stationary
 float deadPoint0 = 88.0; // Heel
@@ -59,7 +61,7 @@ void loop() {
     c = Serial.read();
   } while (c != ' ');
   // Make sure the entire data-packet is in the buffer
-  while (Serial.available() < 6) delay(10);
+  while (Serial.available() < 7) delay(10);
   // Read wheel data
   c = Serial.read();
   float wheelSpeed0 = char_to_float(c);
@@ -77,7 +79,9 @@ void loop() {
   // Read pickup mechanism state
   c = Serial.read();
   // float pu = char_to_float(c);
-  bool pu_up = (c == 'Z');
+  bool pu_up = (c != '0');
+  c = Serial.read();
+  bool lights_on = (c != '0');
   
   
   //The Python program will return a value between -1 and 1, the arduino needs values between 0 and 180 and converts it here
@@ -99,6 +103,7 @@ void loop() {
   cameraY.write(camY);
   pickup0.write(pickupAngle0);
   pickup1.write(pickupAngle1);
+  digitalWrite(lightsPin, lights_on ? HIGH : LOW);
 }
 
 

@@ -20,11 +20,12 @@ for i in range(16):
     except Exception:
         print('No device on port {}'.format(i))
         continue
-msg = ' 000000'
+msg = ' 0000000'
 ser.write(msg.encode())
 camera_dir = [0.0, 0.0]
 camera_speed = 1
 pickup = 0
+lights = 0
 
 # the angles at which the wheels' axes are pointing
 axis_angles = [
@@ -34,8 +35,6 @@ axis_angles = [
 ]
 
 FPS = 20
-EXPORT_AS_JSON = False
-COMPUTE_SPEEDS = True
 
 # method to keep a value in a certain interval. Used for message sending
 def clamp(x, bounds):
@@ -58,20 +57,8 @@ def map_to_char(x):
 
 # turns the data dictionary into a message for the Arduino
 def to_string(data):
-    if COMPUTE_SPEEDS:
-        # Remove the movement and rotation values
-        del data['movement_x']
-        del data['movement_y']
-        del data['rotation']
-    else:
-        # Remove the relative wheel speeds
-        del data['wheel0']
-        del data['wheel1']
-        del data['wheel2']
-    if EXPORT_AS_JSON:
-        return json.dumps(data)
-    else:
-        return ' ' + ''.join(map_to_char(value) for value in data.values())
+    # Remove the movement and rotation values
+    return ' ' + ''.join(map_to_char(value) for value in data.values())
 
 # make sure we pick the right controller
 # (used as a safeguard, since InputMapper's exclusive mode doesn't always work)
@@ -95,13 +82,18 @@ wheel_directions = [(-sin(theta), cos(theta)) for theta in axis_angles]
 def dot(x, y):
     return sum(a*b for (a, b) in zip(x, y))
 
-# some definitions for the axis numbers
-leftX = 0
-leftY = 1
-triggers = 2
-rightX = 3
-rightY = 4
+# some definitions for the axis numbers and buttons
+leftX        = 0
+leftY        = 1
+triggers     = 2
+rightX       = 3
+rightY       = 4
+
 CAMERA_RESET = 9
+PICKUP_UP    = 4
+PICKUP_DOWN  = 5
+LIGHTS_ON    = 0
+LIGHTS_OFF   = 1
 
 # Define some colors for printing
 BLACK = (0, 0, 0)
@@ -174,13 +166,21 @@ while not done:
         done = True
     textPrint.print(screen, "Buttons pressed: " + ", ".join(str(k) for k in buttons))
 
-    up = 5 in buttons
-    down = 4 in buttons
+    up = PICKUP_UP in buttons
+    down = PICKUP_DOWN in buttons
+
+    lights_on = LIGHTS_ON in buttons
+    lights_off = LIGHTS_OFF in buttons
 
     if up and not down:
         pickup = 1
     elif down and not up:
         pickup = 0
+
+    if lights_on and not lights_off:
+        lights = 1
+    elif lights_off and not lights_on:
+        lights = 0
 
     # give the analog sticks and triggers, and calculate the wheel velocities
     movement = list(map(
@@ -210,15 +210,13 @@ while not done:
     )
 
     data = {
-        'wheel0': wheel_velocities[0],
-        'wheel1': wheel_velocities[1],
-        'wheel2': wheel_velocities[2],
-        'movement_x': movement[0],
-        'movement_y': movement[1],
-        'rotation': rotation,
+        'wheel0' : wheel_velocities[0],
+        'wheel1' : wheel_velocities[1],
+        'wheel2' : wheel_velocities[2],
         'camera0': camera_dir[0],
         'camera1': camera_dir[1],
-        'pickup0': pickup
+        'pickup0': pickup,
+        'lights' : lights
     }
     prevmsg = msg
     msg = to_string(data)
