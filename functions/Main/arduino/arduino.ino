@@ -13,7 +13,7 @@ Servo cameraX;
 Servo cameraY;
 Servo pickup0;
 Servo pickup1;
-int lightsPin = 12;
+int lightsPin = 13;
 
 // Values at which the continuous servos are (almost) stationary
 float deadPoint0 = 88.0; // Heel
@@ -35,11 +35,12 @@ void setup() {
   cameraY.attach(6);
   pickup0.attach(7);
   pickup1.attach(8);
+  pinMode(lightsPin, OUTPUT);
 
-  Serial.begin(9600); //for Ethernet or Wifi -- and clear input buffer
+  Serial1.begin(115200); //for Ethernet or Wifi -- and clear input buffer
   // clear the input buffer
-  while (Serial.available()) {
-     Serial.read();  
+  while (Serial1.available()) {
+     Serial1.read();  
   }
 }
 
@@ -56,34 +57,36 @@ float char_to_float(char c) {
 }
 
 void loop() {
+  // Serial1.print('h');
   char c;
   do {
-    c = Serial.read();
+    c = Serial1.read();
   } while (c != ' ');
   // Make sure the entire data-packet is in the buffer
-  while (Serial.available() < 7) delay(10);
+  while (Serial1.available() < 7) {
+    delay(10);
+  }
   // Read wheel data
-  c = Serial.read();
+  c = Serial1.read();
   float wheelSpeed0 = char_to_float(c);
-  c = Serial.read();
+  c = Serial1.read();
   float wheelSpeed1 = char_to_float(c);
-  c = Serial.read();
+  c = Serial1.read();
   float wheelSpeed2 = char_to_float(c);
 
   // Read camera angles
-  c = Serial.read();
+  c = Serial1.read();
   float camX = char_to_float(c);
-  c = Serial.read();
+  c = Serial1.read();
   float camY = char_to_float(c);
 
   // Read pickup mechanism state
-  c = Serial.read();
+  c = Serial1.read();
   // float pu = char_to_float(c);
   bool pu_up = (c != '0');
-  c = Serial.read();
+  c = Serial1.read();
   bool lights_on = (c != '0');
-  
-  
+
   //The Python program will return a value between -1 and 1, the arduino needs values between 0 and 180 and converts it here
   wheelSpeed0  = wheelSpeed0 * 90 + deadPoint0;
   wheelSpeed1  = wheelSpeed1 * 90 + deadPoint1;
@@ -94,7 +97,6 @@ void loop() {
   // float pickupAngle1 = pickup1down + pu * (pickup1up - pickup1down);
   float pickupAngle0 = pu_up ? pickup0up : pickup0down;
   float pickupAngle1 = pu_up ? pickup1up : pickup1down;
-  
 
   wheel0.write(wheelSpeed0);
   wheel1.write(wheelSpeed1);
@@ -104,6 +106,8 @@ void loop() {
   pickup0.write(pickupAngle0);
   pickup1.write(pickupAngle1);
   digitalWrite(lightsPin, lights_on ? HIGH : LOW);
+
+  
 }
 
 

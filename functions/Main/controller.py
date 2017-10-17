@@ -1,10 +1,11 @@
-import json
+import serial
 import pygame
 from os import system
-from time import sleep
+from msvcrt import getch
 from math import sin, cos, pi
 from string import ascii_lowercase, ascii_uppercase
-import serial
+
+FPS = 20
 
 # initialise the joysticks
 pygame.init()
@@ -12,15 +13,15 @@ pygame.joystick.init()
 USED_JOYSTICK = 1
 
 # initialise the serial connection and reset all servos
-ser = None
-for i in range(16):
-    try:
-        ser = serial.Serial('COM{}'.format(i), 9600)
-        print('Found a device on serial port {}'.format(i))
-    except Exception:
-        print('No device on port {}'.format(i))
-        continue
+try:
+    ser = serial.serial_for_url('socket://192.168.1.1:2001', baudrate=115200, timeout=1/FPS)
+except Exception:
+    print('Error: no serial device found. Press any key to close.')
+    getch()
+    exit()
+
 msg = ' 0000000'
+while ser.read(1) != b'': pass
 ser.write(msg.encode())
 camera_dir = [0.0, 0.0]
 camera_speed = 1
@@ -33,8 +34,6 @@ axis_angles = [
     7 / 6 * pi,
     11 / 6 * pi
 ]
-
-FPS = 20
 
 # method to keep a value in a certain interval. Used for message sending
 def clamp(x, bounds):
@@ -62,11 +61,17 @@ def to_string(data):
 
 # make sure we pick the right controller
 # (used as a safeguard, since InputMapper's exclusive mode doesn't always work)
+i = -1
 for i in range(pygame.joystick.get_count()):
     name = pygame.joystick.Joystick(i).get_name()
     print(name)
     if name == 'Controller (XBOX 360 For Windows)':
         USED_JOYSTICK = i
+
+if i == -1:
+    print('Error: no joystick found. Press any key to close')
+    getch()
+    exit()
 print('Using joystick {}'.format(i))
 
 browser_location = r'C:\Program Files\Nightly\firefox.exe'
@@ -223,7 +228,8 @@ while not done:
     textPrint.print(screen, msg)
     if msg != prevmsg or not SPARSE:
         ser.write(msg.encode())
-
+    k_ = ser.read(1)
+    if k_ != b'': print(k_)
 
     # Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
