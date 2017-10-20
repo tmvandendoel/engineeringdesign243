@@ -29,10 +29,10 @@ pickup = 0
 lights = 0
 
 # the angles at which the wheels' axes are pointing
-axis_angles = [
-    pi / 2,
-    7 / 6 * pi,
-    11 / 6 * pi
+axis_angles = [ # 0 = right, pi/2 = forward
+    5 / 6 * pi, # left
+    1 / 6 * pi, # right
+    9 / 6 * pi # back
 ]
 
 # method to keep a value in a certain interval. Used for message sending
@@ -81,6 +81,7 @@ def open_video_feed():
 
 
 # using the angles, we determine the direction in which wheels will move when powered
+# this is perpendicular to the acis angles
 wheel_directions = [(-sin(theta), cos(theta)) for theta in axis_angles]
 
 # function to compute dot-product of two vectors, used for wheel speed calculations

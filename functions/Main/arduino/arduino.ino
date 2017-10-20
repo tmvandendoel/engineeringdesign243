@@ -16,9 +16,9 @@ Servo pickup1;
 int lightsPin = 13;
 
 // Values at which the continuous servos are (almost) stationary
-float deadPoint0 = 88.0; // Heel
-float deadPoint1 = 83.8; // Niks
-float deadPoint2 = 98.0; // Half
+float deadPoint0 = 88.0; // right
+float deadPoint1 = 99.5; // left
+float deadPoint2 = 83.8; // back
 
 // Angles at which the pickup servos are up resp. down
 float pickup0up   = 0;
