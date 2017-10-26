@@ -17,14 +17,14 @@ int lightsPin = 13;
 
 // Values at which the continuous servos are (almost) stationary
 float deadPoint0 = 88.0; // right
-float deadPoint1 = 99.5; // left
+float deadPoint1 = 83.8; // left
 float deadPoint2 = 83.8; // back
 
 // Angles at which the pickup servos are up resp. down
-float pickup0up   = 0;
-float pickup0down = 135;
-float pickup1up   = 0;
-float pickup1down = 135;
+float pickup0up   = 180;
+float pickup0down = 60;
+float pickup1up   = 60;
+float pickup1down = 180;
 
 void setup() {
   // Attach the servo objects to their respective ports

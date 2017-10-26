@@ -32,7 +32,7 @@ lights = 0
 axis_angles = [ # 0 = right, pi/2 = forward
     5 / 6 * pi, # left
     1 / 6 * pi, # right
-    9 / 6 * pi # back
+    9 / 6 * pi  # back
 ]
 
 # method to keep a value in a certain interval. Used for message sending
@@ -82,7 +82,7 @@ def open_video_feed():
 
 # using the angles, we determine the direction in which wheels will move when powered
 # this is perpendicular to the acis angles
-wheel_directions = [(-sin(theta), cos(theta)) for theta in axis_angles]
+wheel_directions = [(sin(theta), -cos(theta)) for theta in axis_angles]
 
 # function to compute dot-product of two vectors, used for wheel speed calculations
 def dot(x, y):
@@ -172,7 +172,7 @@ while not done:
         done = True
     textPrint.print(screen, "Buttons pressed: " + ", ".join(str(k) for k in buttons))
 
-    up = PICKUP_UP in buttons
+    up   = PICKUP_UP in buttons
     down = PICKUP_DOWN in buttons
 
     lights_on = LIGHTS_ON in buttons
