@@ -205,7 +205,7 @@ while not done:
     textPrint.print(screen, "Camera  : {}".format(camera_axes))
 
 
-    wheel_velocities = [dot(movement, wheel_direction)/2 + rotation for wheel_direction in wheel_directions]
+    wheel_velocities = [-dot(movement, wheel_direction)/2 + rotation for wheel_direction in wheel_directions]
     camera_dir = [clamp(a + b * camera_speed / FPS, (-1, 1)) for a, b in zip(camera_dir, camera_axes)]
     if CAMERA_RESET in buttons:
         camera_dir = [0, 0]

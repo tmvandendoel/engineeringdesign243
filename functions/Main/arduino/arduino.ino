@@ -4,7 +4,7 @@
  *  9, 10, 11 -> front, left, and right wheels
  *  5, 6      -> camera X and Y
  *  7, 8      -> picking up
- *  12        -> lights
+ *  13        -> lights
  */
 Servo wheel0;
 Servo wheel1;
@@ -16,8 +16,8 @@ Servo pickup1;
 int lightsPin = 13;
 
 // Values at which the continuous servos are (almost) stationary
-float deadPoint0 = 88.0; // right
-float deadPoint1 = 83.8; // left
+float deadPoint0 = 82.5; // right
+float deadPoint1 = 87.0; // left
 float deadPoint2 = 83.8; // back
 
 // Angles at which the pickup servos are up resp. down
@@ -31,10 +31,10 @@ void setup() {
   wheel0.attach(9);
   wheel1.attach(10);
   wheel2.attach(11);
-  cameraX.attach(5);
-  cameraY.attach(6);
   pickup0.attach(7);
   pickup1.attach(8);
+  cameraX.attach(5);
+  cameraY.attach(6);
   pinMode(lightsPin, OUTPUT);
 
   Serial1.begin(115200); //for Ethernet or Wifi -- and clear input buffer
@@ -105,6 +105,7 @@ void loop() {
   cameraY.write(camY);
   pickup0.write(pickupAngle0);
   pickup1.write(pickupAngle1);
+  
   digitalWrite(lightsPin, lights_on ? HIGH : LOW);
 
   
